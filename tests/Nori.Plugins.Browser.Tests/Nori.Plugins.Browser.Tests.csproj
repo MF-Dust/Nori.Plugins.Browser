@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<RootNamespace>Nori.Plugins.Browser.Tests</RootNamespace>
+		<AssemblyName>Nori.Plugins.Browser.Tests</AssemblyName>
+		<IsPackable>false</IsPackable>
+		<!-- 测试只用替身会话，不复制 Playwright Node 驱动；真实 Edge 冒烟在 Nori Desktop 中安装插件包完成。 -->
+		<PlaywrightPlatform>none</PlaywrightPlatform>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="coverlet.collector" Version="6.0.4" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+		<PackageReference Include="xunit" Version="2.9.3" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+		<!-- SDK 只提供编译期 Avalonia；测试进程需要真实运行时程序集。 -->
+		<PackageReference Include="Avalonia" Version="12.1.1" />
+	</ItemGroup>
+	<ItemGroup>
+		<Using Include="Xunit" />
+		<ProjectReference Include="../../src/Nori.Plugins.Browser/Nori.Plugins.Browser.csproj" />
+	</ItemGroup>
+	<!--
+		Nori.PluginSDK 是 ref-only 包，宿主外运行插件代码时需要合同程序集本体。
+		包内 ref/net10.0 中是完整 IL（非引用程序集）：构建后复制到测试输出，由 ContractAssemblyResolver 加载。
+	-->
+	<Target Name="CopyNoriPluginContractForTests" AfterTargets="Build">
+		<PropertyGroup>
+			<_NoriPluginContract>$(NuGetPackageRoot)nori.pluginsdk/$(NoriPluginSdkVersion)/ref/net10.0/Nori.PluginRuntime.dll</_NoriPluginContract>
+		</PropertyGroup>
+		<Error Condition="!Exists('$(_NoriPluginContract)')" Text="找不到 Nori.PluginSDK 合同程序集: $(_NoriPluginContract)" />
+		<Copy SourceFiles="$(_NoriPluginContract)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+	</Target>
+</Project>

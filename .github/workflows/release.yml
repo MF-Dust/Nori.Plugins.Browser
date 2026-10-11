@@ -1,0 +1,34 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Verify tag matches manifest version
+        shell: pwsh
+        run: |
+          $manifest = Get-Content src/Nori.Plugins.Browser/manifest.json -Raw | ConvertFrom-Json
+          $tag = "${{ github.ref_name }}".TrimStart("v")
+          if ($manifest.version -ne $tag) { throw "Tag version '$tag' does not match manifest version '$($manifest.version)'." }
+
+      - run: dotnet build Nori.Plugins.Browser.slnx -c Release
+      - run: dotnet test Nori.Plugins.Browser.slnx -c Release --no-build
+      - run: dotnet build src/Nori.Plugins.Browser/Nori.Plugins.Browser.csproj -c Release --no-restore -t:PackNoriPlugin
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" artifacts/io.nori.browser.noripack --title "${{ github.ref_name }}" --generate-notes

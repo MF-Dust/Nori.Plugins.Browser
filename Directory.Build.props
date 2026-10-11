@@ -1,0 +1,11 @@
+<Project>
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<LangVersion>latest</LangVersion>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<!-- 插件合同来自 NuGet 上的 ref-only 包；运行时由 Nori Desktop 提供同名宿主程序集。 -->
+		<NoriPluginSdkVersion>2.3.0</NoriPluginSdkVersion>
+	</PropertyGroup>
+</Project>

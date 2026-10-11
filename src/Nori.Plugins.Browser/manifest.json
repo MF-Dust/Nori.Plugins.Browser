@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "io.nori.browser",
+  "name": "Nori 浏览器自动化",
+  "description": "在独立的临时 Microsoft Edge 会话中执行受限的导航、点击、滚动、等待、读取可见文本与填写动作。需要已安装 Edge 稳定版，仅支持 Windows。",
+  "version": "1.0.0",
+  "authors": [{ "name": "Nori" }],
+  "homepage": "https://github.com/MF-Dust/Nori.Desktop",
+  "repository": "https://github.com/MF-Dust/Nori.Desktop",
+  "license": "GPL-3.0-only",
+  "apiVersion": "2.3",
+  "minHostVersion": "1.0.0",
+  "runtime": {
+    "kind": "dotnet",
+    "assembly": "lib/Nori.Plugins.Browser.dll",
+    "entryType": "Nori.Plugins.Browser.BrowserPlugin"
+  },
+  "capabilities": [],
+  "optionalCapabilities": ["ui.avalonia"],
+  "platforms": ["windows"],
+  "dependencies": []
+}

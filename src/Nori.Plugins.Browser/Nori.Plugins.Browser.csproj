@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!--
+		Nori 浏览器自动化插件 (io.nori.browser)
+
+		Playwright 与 Edge 驱动只随插件包分发；合同程序集 Nori.PluginRuntime 与 Avalonia 由 Nori Desktop 提供。
+		打包: dotnet build src/Nori.Plugins.Browser -c Release -t:PackNoriPlugin
+	-->
+	<PropertyGroup>
+		<RootNamespace>Nori.Plugins.Browser</RootNamespace>
+		<AssemblyName>Nori.Plugins.Browser</AssemblyName>
+		<IsPackable>false</IsPackable>
+		<!-- 插件仅支持 Windows Edge，只携带 win32_x64 Node 驱动。 -->
+		<PlaywrightPlatform>win</PlaywrightPlatform>
+		<NoriPluginId>io.nori.browser</NoriPluginId>
+		<NoriPluginPackageDirectory>$(MSBuildThisFileDirectory)../../artifacts/</NoriPluginPackageDirectory>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="Nori.Plugins.Browser.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Nori.PluginSDK" Version="$(NoriPluginSdkVersion)" />
+		<PackageReference Include="Microsoft.Playwright" Version="1.56.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="manifest.json" CopyToOutputDirectory="PreserveNewest" />
+		<None Include="README.md" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<!--
+		组装 .noripack：只放 manifest、README、LICENSE、插件程序集、Playwright 程序集与 lib/.playwright 驱动。
+		Playwright 在宿主根目录找不到自身程序集时，会回退到 Microsoft.Playwright.dll 所在目录查找 .playwright。
+		Avalonia、Nori.PluginRuntime 等宿主程序集不得进入插件包。
+	-->
+	<Target Name="PackNoriPlugin" DependsOnTargets="Build">
+		<PropertyGroup>
+			<_NoriPluginStaging>$(MSBuildProjectDirectory)/obj/$(Configuration)/noripack-staging/</_NoriPluginStaging>
+			<_NoriPluginOutput>$([MSBuild]::EnsureTrailingSlash('$(OutDir)'))</_NoriPluginOutput>
+		</PropertyGroup>
+		<ItemGroup>
+			<_NoriPluginRootFile Include="$(_NoriPluginOutput)manifest.json;$(_NoriPluginOutput)README.md;$(MSBuildThisFileDirectory)../../LICENSE" />
+			<!-- 只携带 Playwright 及其非框架依赖；System.Text.Json 等由 .NET 运行时提供。 -->
+			<_NoriPluginLibFile Include="$(TargetPath)" />
+			<_NoriPluginLibFile Include="@(RuntimeCopyLocalItems)" Condition="'%(RuntimeCopyLocalItems.NuGetPackageId)' == 'Microsoft.Playwright' OR '%(RuntimeCopyLocalItems.NuGetPackageId)' == 'Microsoft.Bcl.AsyncInterfaces'" />
+			<_NoriPluginDriverFile Include="$(_NoriPluginOutput).playwright/**/*" />
+		</ItemGroup>
+		<Error Condition="'@(_NoriPluginLibFile->AnyHaveMetadataValue('Filename', 'Microsoft.Playwright'))' != 'true'" Text="插件包缺少 Microsoft.Playwright.dll" />
+		<Error Condition="!Exists('$(_NoriPluginOutput).playwright/node/win32_x64/node.exe') OR !Exists('$(_NoriPluginOutput).playwright/package/cli.js')" Text="插件输出缺少 Playwright Windows 驱动" />
+		<RemoveDir Directories="$(_NoriPluginStaging)" />
+		<Copy SourceFiles="@(_NoriPluginRootFile)" DestinationFolder="$(_NoriPluginStaging)" />
+		<Copy SourceFiles="@(_NoriPluginLibFile)" DestinationFolder="$(_NoriPluginStaging)lib/" />
+		<Copy SourceFiles="@(_NoriPluginDriverFile)" DestinationFiles="@(_NoriPluginDriverFile->'$(_NoriPluginStaging)lib/.playwright/%(RecursiveDir)%(Filename)%(Extension)')" />
+		<MakeDir Directories="$(NoriPluginPackageDirectory)" />
+		<ZipDirectory SourceDirectory="$(_NoriPluginStaging)" DestinationFile="$(NoriPluginPackageDirectory)$(NoriPluginId).noripack" Overwrite="true" />
+		<Message Importance="high" Text="插件包: $(NoriPluginPackageDirectory)$(NoriPluginId).noripack" />
+	</Target>
+</Project>

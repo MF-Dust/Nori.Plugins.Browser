@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/Nori.Plugins.Browser/Nori.Plugins.Browser.csproj" />
+  <Project Path="tests/Nori.Plugins.Browser.Tests/Nori.Plugins.Browser.Tests.csproj" />
+</Solution>
